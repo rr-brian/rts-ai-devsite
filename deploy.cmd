@@ -120,9 +120,9 @@ IF EXIST "%DEPLOYMENT_SOURCE%\node_modules" (
   )
 )
 
-:: 5. Copy package.json from source to deployment target
-echo Copying package.json from source to deployment target...
-call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\package.json" "%DEPLOYMENT_TARGET%\package.json" /Y
+:: 5. Copy server-package.json from source to deployment target as package.json
+echo Copying server-package.json from source to deployment target as package.json...
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server-package.json" "%DEPLOYMENT_TARGET%\package.json" /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
 echo Changing to deployment target directory...
