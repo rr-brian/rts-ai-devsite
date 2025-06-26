@@ -94,6 +94,17 @@ echo Copying routes directory contents
 call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\routes" "%DEPLOYMENT_TARGET%\routes" /E /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
+:: Copy services directory
+echo Creating services directory
+IF NOT EXIST "%DEPLOYMENT_TARGET%\services" (
+  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\services"
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+echo Copying services directory contents
+call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\services" "%DEPLOYMENT_TARGET%\services" /E /Y
+IF !ERRORLEVEL! NEQ 0 goto error
+
 :: 4. Copy web.config file and other critical files
 echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config" /Y
