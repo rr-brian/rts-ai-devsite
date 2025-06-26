@@ -1,22 +1,21 @@
 /**
- * Startup script to ensure dependencies are installed
- * This script will check for required dependencies and install them if missing
+ * Startup script for Azure App Service
+ * This script will check for required dependencies but won't attempt to install them
+ * as that should be handled by the deployment process
  */
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// List of critical dependencies
+// List of critical dependencies to check
 const criticalDependencies = [
   'express',
   'cors',
   'dotenv',
   'node-fetch',
-  'path',
   'uuid'
 ];
 
-console.log('Starting dependency check...');
+console.log('Starting server initialization...');
 
 // Function to check if a module is installed
 function isModuleInstalled(moduleName) {
@@ -28,25 +27,19 @@ function isModuleInstalled(moduleName) {
   }
 }
 
-// Check and install missing dependencies
+// Check for missing dependencies but don't try to install them
 let missingDependencies = [];
 for (const dependency of criticalDependencies) {
   if (!isModuleInstalled(dependency)) {
-    console.log(`Missing dependency: ${dependency}`);
+    console.log(`Warning: Dependency not found: ${dependency}`);
     missingDependencies.push(dependency);
   }
 }
 
-// Install missing dependencies if any
+// Log missing dependencies but continue anyway
 if (missingDependencies.length > 0) {
-  console.log(`Installing missing dependencies: ${missingDependencies.join(', ')}`);
-  try {
-    execSync(`npm install ${missingDependencies.join(' ')} --save`, { stdio: 'inherit' });
-    console.log('Dependencies installed successfully');
-  } catch (error) {
-    console.error('Failed to install dependencies:', error);
-    process.exit(1);
-  }
+  console.warn(`Missing dependencies: ${missingDependencies.join(', ')}`);
+  console.warn('Continuing startup process anyway - these should be installed via package.json');
 }
 
 // Start the server
