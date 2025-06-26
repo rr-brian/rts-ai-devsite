@@ -10,9 +10,14 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Object} Configuration object with endpoint and key
  */
 function getAzureFunctionConfig() {
+  // Log environment variables
+  console.log('Environment variables for Azure Function:');
+  console.log('REACT_APP_CONVERSATION_FUNCTION_URL:', process.env.REACT_APP_CONVERSATION_FUNCTION_URL);
+  console.log('REACT_APP_FUNCTION_KEY:', process.env.REACT_APP_FUNCTION_KEY ? '[REDACTED]' : 'Not set');
+  
   return {
-    endpoint: process.env.FN_CONVERSATIONSAVE_URL || process.env.CONVERSATION_SAVE_FUNCTION_URL || '',
-    key: process.env.FN_CONVERSATIONSAVE_KEY || process.env.CONVERSATION_SAVE_FUNCTION_KEY || ''
+    endpoint: process.env.REACT_APP_CONVERSATION_FUNCTION_URL || process.env.FN_CONVERSATIONSAVE_URL || '',
+    key: process.env.REACT_APP_FUNCTION_KEY || process.env.FN_CONVERSATIONSAVE_KEY || ''
   };
 }
 
@@ -26,8 +31,8 @@ async function saveConversation(conversationData) {
   
   console.log('fn-conversationsave Function config prepared:', { 
     endpointConfigured: azureFunctionConfig.endpoint ? 'Yes' : 'No',
-    source: process.env.FN_CONVERSATIONSAVE_URL ? 'FN_CONVERSATIONSAVE_URL' : 
-            (process.env.CONVERSATION_SAVE_FUNCTION_URL ? 'CONVERSATION_SAVE_FUNCTION_URL' : 'Not configured')
+    source: process.env.REACT_APP_CONVERSATION_FUNCTION_URL ? 'REACT_APP_CONVERSATION_FUNCTION_URL' : 
+            (process.env.FN_CONVERSATIONSAVE_URL ? 'FN_CONVERSATIONSAVE_URL' : 'Not configured')
   });
 
   // Ensure conversationId exists
@@ -39,6 +44,8 @@ async function saveConversation(conversationData) {
   if (azureFunctionConfig.endpoint) {
     try {
       console.log(`Calling fn-conversationsave Function to ${conversationData.conversationId ? 'update' : 'create'} conversation`);
+      console.log('Azure Function endpoint:', azureFunctionConfig.endpoint);
+      console.log('Azure Function key configured:', azureFunctionConfig.key ? 'Yes' : 'No');
       
       const response = await fetch(azureFunctionConfig.endpoint, {
         method: 'POST',
@@ -48,6 +55,8 @@ async function saveConversation(conversationData) {
         },
         body: JSON.stringify(conversationData)
       });
+      
+      console.log('Azure Function response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();

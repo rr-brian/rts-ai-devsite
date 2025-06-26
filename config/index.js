@@ -11,13 +11,22 @@ const loadConfig = () => {
     try {
       const dotenv = require('dotenv');
       
-      // Check if .env file exists and load it
+      // Check if .env file exists in the current directory
       const envPath = path.resolve(__dirname, '../.env');
+      // Also check in the rts-ai-dev directory
+      const altEnvPath = path.resolve(__dirname, '../../rts-ai-dev/.env');
+      
+      console.log('Looking for .env file at:', envPath);
+      console.log('Looking for alternative .env file at:', altEnvPath);
       
       if (fs.existsSync(envPath)) {
         // Load environment variables using dotenv
         dotenv.config({ path: envPath });
         console.log('Environment variables loaded from .env file');
+      } else if (fs.existsSync(altEnvPath)) {
+        // Load environment variables from the alternative path
+        dotenv.config({ path: altEnvPath });
+        console.log('Environment variables loaded from alternative .env file');
       } else {
         console.log('No .env file found, using environment variables from the system');
       }
