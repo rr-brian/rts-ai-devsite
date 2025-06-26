@@ -137,8 +137,24 @@ echo NPM version:
 call :ExecuteCmd npm -v
 
 echo Installing dependencies with npm...
+
+:: First, try to install express explicitly
+echo Installing express package explicitly...
+call :ExecuteCmd npm install express --save
+IF !ERRORLEVEL! NEQ 0 echo Warning: Express installation may have failed, continuing anyway...
+
+:: Then install all other dependencies
+echo Installing all production dependencies...
 call :ExecuteCmd npm install --production
 IF !ERRORLEVEL! NEQ 0 goto error
+
+:: Verify express is installed
+echo Checking for express package...
+IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" (
+  echo Express package not found, installing it separately...
+  call :ExecuteCmd npm install express --save
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
 
 echo Listing installed packages:
 call :ExecuteCmd npm list --depth=0
