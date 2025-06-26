@@ -5,19 +5,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import sub-routers
-let conversationsRouter;
-try {
-  conversationsRouter = require('../server/api/conversations');
-  console.log('Conversations router loaded successfully');
-} catch (error) {
-  console.warn('Conversations router not available:', error.message);
-  // Create a simple router fallback
-  conversationsRouter = express.Router();
-  conversationsRouter.get('/', (req, res) => {
-    res.json({ error: 'Conversations API not available' });
-  });
-}
-
+const conversationsRouter = require('./conversations');
 const azureOpenAIRouter = require('./azure-openai');
 const { getClientConfig, getApiConfig } = require('../config');
 

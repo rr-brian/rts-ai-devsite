@@ -7,9 +7,9 @@ const fs = require('fs');
 
 // Import modules
 const { loadConfig } = require('./config');
-const { configureCors } = require('./middleware/cors');
-const { requestLogger, apiLogger } = require('./middleware/logging');
+const { setupMiddleware } = require('./middleware/setup');
 const apiRoutes = require('./routes/api');
+const conversationRoutes = require('./routes/conversations');
 
 // Load environment variables
 loadConfig();
@@ -18,168 +18,14 @@ loadConfig();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(configureCors());
-app.use(requestLogger);
+// Configure all middleware
+setupMiddleware(app);
 
-// API routes logging
-app.use('/api', (req, res, next) => {
-  console.log(`API request received: ${req.method} ${req.originalUrl}`);
-  next();
-});
-app.use('/api', apiLogger);
-
-// IMPORTANT: Direct handler for conversations/update endpoint must be registered BEFORE the API routes
-app.post('/api/conversations/update', async (req, res) => {
-  console.log('DIRECT HANDLER: /api/conversations/update endpoint called');
-  
-  // Direct implementation of the conversations update endpoint
-  try {
-    // Load UUID module for generating conversation IDs
-    let uuidv4;
-    try {
-      uuidv4 = require('uuid').v4;
-      console.log('UUID module loaded successfully');
-    } catch (uuidError) {
-      console.error('Failed to load UUID module:', uuidError);
-      // Create a basic UUID generator if the module fails to load
-      uuidv4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    }
-    
-    try {
-      // Try to load UUID module
-      const uuid = require('uuid');
-      uuidv4 = uuid.v4;
-      console.log('UUID module loaded successfully');
-    } catch (uuidError) {
-      console.error('Failed to load UUID module:', uuidError);
-      // Simple UUID fallback
-      uuidv4 = function() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-        });
-      };
-    }
-    
-    // Azure Function configuration from environment variables
-    const azureFunctionConfig = {
-      endpoint: process.env.FN_CONVERSATIONSAVE_URL || process.env.CONVERSATION_SAVE_FUNCTION_URL || '',
-      key: process.env.FN_CONVERSATIONSAVE_KEY || process.env.CONVERSATION_SAVE_FUNCTION_KEY || ''
-    };
-    
-    console.log('fn-conversationsave Function config prepared:', { 
-      endpointConfigured: azureFunctionConfig.endpoint ? 'Yes' : 'No',
-      source: process.env.FN_CONVERSATIONSAVE_URL ? 'FN_CONVERSATIONSAVE_URL' : 
-              (process.env.CONVERSATION_SAVE_FUNCTION_URL ? 'CONVERSATION_SAVE_FUNCTION_URL' : 'Not configured')
-    });
-    
-    const { 
-      conversationId, 
-      userId, 
-      userEmail, 
-      chatType, 
-      messages, 
-      totalTokens, 
-      metadata 
-    } = req.body;
-    
-    console.log('Request body received:', { conversationId, userId, userEmail, chatType });
-    
-    if (!messages || !Array.isArray(messages)) {
-      console.error('Invalid messages format:', messages);
-      return res.status(400).json({ error: 'Invalid messages format' });
-    }
-    
-    const lastUserMessage = messages
-      .filter(m => m.role === 'user')
-      .pop()?.content || '';
-      
-    const lastAssistantMessage = messages
-      .filter(m => m.role === 'assistant')
-      .pop()?.content || '';
-    
-    // Prepare data for Azure Function
-    const conversationData = {
-      conversationId: conversationId || uuidv4(),
-      userId: userId || 'anonymous',
-      userEmail: userEmail || '',
-      chatType: chatType || 'general',
-      lastUpdated: new Date().toISOString(),
-      startTime: new Date().toISOString(),
-      messageCount: messages.length,
-      totalTokens: totalTokens || 0,
-      conversationState: messages,
-      lastUserMessage,
-      lastAssistantMessage,
-      metadata: metadata || {}
-    };
-    
-    // Call Azure Function to save conversation
-    if (azureFunctionConfig.endpoint) {
-      try {
-        console.log(`Calling fn-conversationsave Function to ${conversationId ? 'update' : 'create'} conversation`);
-        
-        const response = await fetch(azureFunctionConfig.endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(azureFunctionConfig.key ? { 'x-functions-key': azureFunctionConfig.key } : {})
-          },
-          body: JSON.stringify(conversationData)
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('fn-conversationsave Function error:', response.status, errorText);
-          throw new Error(`fn-conversationsave Function returned ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('fn-conversationsave Function response:', result);
-        
-        if (conversationId) {
-          console.log('Conversation updated successfully');
-          res.status(200).json({ conversationId });
-        } else {
-          console.log('New conversation created successfully with ID:', conversationData.conversationId);
-          res.status(201).json({ conversationId: conversationData.conversationId });
-        }
-      } catch (functionError) {
-        console.error('Error calling fn-conversationsave Function:', functionError);
-        throw functionError;
-      }
-    } else {
-      // No fn-conversationsave Function configured, just return the conversation ID
-      console.log('No fn-conversationsave Function configured, skipping conversation save');
-      
-      if (conversationId) {
-        res.status(200).json({ conversationId });
-      } else {
-        res.status(201).json({ conversationId: conversationData.conversationId });
-      }
-    }
-  } catch (error) {
-    console.error('Error updating conversation:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Request body:', req.body);
-    res.status(500).json({ error: 'Failed to update conversation', details: error.message });
-  } finally {
-    // No cleanup needed for Azure Function calls
-  }
-}
-});
-
-// Mount API routes AFTER the direct handler
+// Mount API routes
 app.use('/api', apiRoutes);
 
-
+// Mount conversation routes
+app.use('/api/conversations', conversationRoutes);
 
 // Very simple test endpoint that should always work
 app.get('/test', (req, res) => {
