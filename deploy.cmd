@@ -93,11 +93,7 @@ call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.
 IF !ERRORLEVEL! NEQ 0 goto error
 
 
-echo Copying api-test.html to deployment target...
-call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\api-test.html" "%DEPLOYMENT_TARGET%\api-test.html" /Y
-IF !ERRORLEVEL! NEQ 0 goto error
-
-echo Test files have been removed after successful debugging
+echo Skipping api-test.html copy step as file does not exist...
 
 :: 5. KuduSync - Skip copying build files since we're doing a server-only deployment
 echo Skipping build files sync for server-only deployment...
