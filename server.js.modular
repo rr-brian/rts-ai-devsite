@@ -1,0 +1,116 @@
+/**
+ * Main server entry point
+ */
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+
+// Import modules
+const { loadConfig } = require('./config');
+const { configureCors } = require('./middleware/cors');
+const { requestLogger, apiLogger } = require('./middleware/logging');
+const apiRoutes = require('./routes/api');
+
+// Load environment variables
+loadConfig();
+
+// Initialize Express app
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configure middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(configureCors());
+app.use(requestLogger);
+
+// API routes logging
+app.use('/api', (req, res, next) => {
+  console.log(`API request received: ${req.method} ${req.originalUrl}`);
+  next();
+});
+app.use('/api', apiLogger);
+
+// Mount API routes
+app.use('/api', apiRoutes);
+
+// TEMPORARY: Direct handler for conversations/update endpoint to ensure compatibility
+// This can be removed once the modular structure is fully deployed to Azure
+app.post('/api/conversations/update', async (req, res) => {
+  console.log('TEMPORARY direct handler for /api/conversations/update called');
+  // Skip the router and implement the endpoint directly
+  try {
+  } catch (error) {
+    console.error('Error loading conversations router:', error);
+    
+    // Fall back to direct implementation
+    try {
+      const { userId, userEmail, chatType, messages, totalTokens, metadata } = req.body;
+      const conversationId = req.body.conversationId || require('uuid').v4();
+      
+      console.log('Creating/updating conversation with ID:', conversationId);
+      
+      // Just return the conversation ID for now (we'll implement actual DB saving later)
+      res.status(req.body.conversationId ? 200 : 201).json({ conversationId });
+    } catch (fallbackError) {
+      console.error('Error in fallback handler:', fallbackError);
+      res.status(500).json({ error: 'Failed to process conversation', details: fallbackError.message });
+    }
+  }
+});
+
+// Direct route to api-test.html for testing
+app.get('/api-test.html', (req, res) => {
+  console.log('API test page requested');
+  res.sendFile('api-test.html', { root: __dirname });
+});
+
+// Very simple test endpoint that should always work
+app.get('/test', (req, res) => {
+  console.log('Simple test endpoint called');
+  res.send('Test endpoint is working');
+});
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, 'build')));
+
+// For any request that doesn't match an API route or static file,
+// send the index.html file from the React app (SPA fallback)
+app.get('*', (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  // Try to serve the index.html file
+  try {
+    const indexPath = path.join(__dirname, 'build', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      // Fallback if index.html doesn't exist
+      res.status(404).send('Application not found. Please build the React app first.');
+    }
+  } catch (error) {
+    console.error('Error serving SPA fallback:', error);
+    res.status(500).send('Server Error: Could not serve application');
+  }
+});
+
+// Add a catch-all handler for API routes that weren't matched
+app.use('/api/*', (req, res) => {
+  console.log(`API endpoint not found: ${req.method} ${req.url}`);
+  res.status(404).json({
+    error: 'API endpoint not found',
+    path: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Static files served from: ${path.join(__dirname, 'build')}`);
+});
