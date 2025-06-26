@@ -70,12 +70,14 @@ app.post('/api/conversations/update', async (req, res) => {
     
     // Azure Function configuration from environment variables
     const azureFunctionConfig = {
-      endpoint: process.env.CONVERSATION_SAVE_FUNCTION_URL || '',
-      key: process.env.CONVERSATION_SAVE_FUNCTION_KEY || ''
+      endpoint: process.env.FN_CONVERSATIONSAVE_URL || process.env.CONVERSATION_SAVE_FUNCTION_URL || '',
+      key: process.env.FN_CONVERSATIONSAVE_KEY || process.env.CONVERSATION_SAVE_FUNCTION_KEY || ''
     };
     
-    console.log('Azure Function config prepared:', { 
-      endpointConfigured: azureFunctionConfig.endpoint ? 'Yes' : 'No'
+    console.log('fn-conversationsave Function config prepared:', { 
+      endpointConfigured: azureFunctionConfig.endpoint ? 'Yes' : 'No',
+      source: process.env.FN_CONVERSATIONSAVE_URL ? 'FN_CONVERSATIONSAVE_URL' : 
+              (process.env.CONVERSATION_SAVE_FUNCTION_URL ? 'CONVERSATION_SAVE_FUNCTION_URL' : 'Not configured')
     });
     
     const { 
@@ -122,7 +124,7 @@ app.post('/api/conversations/update', async (req, res) => {
     // Call Azure Function to save conversation
     if (azureFunctionConfig.endpoint) {
       try {
-        console.log(`Calling Azure Function to ${conversationId ? 'update' : 'create'} conversation`);
+        console.log(`Calling fn-conversationsave Function to ${conversationId ? 'update' : 'create'} conversation`);
         
         const response = await fetch(azureFunctionConfig.endpoint, {
           method: 'POST',
@@ -135,12 +137,12 @@ app.post('/api/conversations/update', async (req, res) => {
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Azure Function error:', response.status, errorText);
-          throw new Error(`Azure Function returned ${response.status}: ${errorText}`);
+          console.error('fn-conversationsave Function error:', response.status, errorText);
+          throw new Error(`fn-conversationsave Function returned ${response.status}: ${errorText}`);
         }
         
         const result = await response.json();
-        console.log('Azure Function response:', result);
+        console.log('fn-conversationsave Function response:', result);
         
         if (conversationId) {
           console.log('Conversation updated successfully');
@@ -150,12 +152,12 @@ app.post('/api/conversations/update', async (req, res) => {
           res.status(201).json({ conversationId: conversationData.conversationId });
         }
       } catch (functionError) {
-        console.error('Error calling Azure Function:', functionError);
+        console.error('Error calling fn-conversationsave Function:', functionError);
         throw functionError;
       }
     } else {
-      // No Azure Function configured, just return the conversation ID
-      console.log('No Azure Function configured, skipping conversation save');
+      // No fn-conversationsave Function configured, just return the conversation ID
+      console.log('No fn-conversationsave Function configured, skipping conversation save');
       
       if (conversationId) {
         res.status(200).json({ conversationId });
