@@ -11,7 +11,6 @@ const criticalDependencies = [
   'express',
   'cors',
   'dotenv',
-  'mssql',
   'node-fetch',
   'path',
   'uuid'
