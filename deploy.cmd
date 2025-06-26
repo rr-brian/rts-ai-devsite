@@ -44,21 +44,11 @@ IF NOT EXIST "%DEPLOYMENT_TARGET%" (
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 
-:: 3. Copy server.js, server directory first (API routes take priority)
-echo Copying server.js and server directory first...
+:: 3. Copy server.js file (API routes take priority)
+echo Copying server.js file...
 
 echo Copying server.js
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js" /Y
-IF !ERRORLEVEL! NEQ 0 goto error
-
-echo Creating server directory
-IF NOT EXIST "%DEPLOYMENT_TARGET%\server" (
-  call :ExecuteCmd mkdir "%DEPLOYMENT_TARGET%\server"
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
-
-echo Copying server directory contents
-call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\server" "%DEPLOYMENT_TARGET%\server" /E /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
 :: 3.1 Copy new modular directories (config, middleware, routes)
