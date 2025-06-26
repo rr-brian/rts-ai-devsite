@@ -77,10 +77,6 @@ router.get('/debug-routes', (req, res) => {
   });
 });
 
-// Direct route to api-test.html for testing
-router.get('/api-test.html', (req, res) => {
-  console.log('API test page requested');
-  res.sendFile('api-test.html', { root: process.cwd() });
-});
+// API test route removed
 
 module.exports = router;

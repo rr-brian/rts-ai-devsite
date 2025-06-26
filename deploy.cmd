@@ -87,7 +87,7 @@ echo Copying routes directory contents
 call :ExecuteCmd xcopy "%DEPLOYMENT_SOURCE%\routes" "%DEPLOYMENT_TARGET%\routes" /E /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
-:: 4. Copy web.config file and other critical files (api-routes.js, api-test.html)
+:: 4. Copy web.config file and other critical files
 echo Copying web.config to deployment target...
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\web.config" "%DEPLOYMENT_TARGET%\web.config" /Y
 IF !ERRORLEVEL! NEQ 0 goto error

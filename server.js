@@ -212,12 +212,6 @@ app.use('/api', apiRoutes);
 
 
 
-// Direct route to api-test.html for testing
-app.get('/api-test.html', (req, res) => {
-  console.log('API test page requested');
-  res.sendFile('api-test.html', { root: __dirname });
-});
-
 // Very simple test endpoint that should always work
 app.get('/test', (req, res) => {
   console.log('Simple test endpoint called');
