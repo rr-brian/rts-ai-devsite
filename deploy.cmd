@@ -44,12 +44,19 @@ IF NOT EXIST "%DEPLOYMENT_TARGET%" (
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 
-:: 3. Copy server.js file (API routes take priority)
-echo Copying server.js file...
+:: 3. Copy server.js and startup.js files
+echo Copying server.js and startup.js files...
+IF EXIST "%DEPLOYMENT_SOURCE%\server.js" (
+  echo Copying server.js
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
 
-echo Copying server.js
-call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server.js" "%DEPLOYMENT_TARGET%\server.js" /Y
-IF !ERRORLEVEL! NEQ 0 goto error
+IF EXIST "%DEPLOYMENT_SOURCE%\startup.js" (
+  echo Copying startup.js
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\startup.js" "%DEPLOYMENT_TARGET%\startup.js" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
 
 :: 3.1 Copy new modular directories (config, middleware, routes)
 echo Copying modular directories...
