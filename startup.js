@@ -51,4 +51,9 @@ if (missingDependencies.length > 0) {
 
 // Start the server
 console.log('Starting server...');
-require('./server.js');
+
+// Import the server and export its app for IIS/iisnode
+const server = require('./server.js');
+
+// Export the app for iisnode
+module.exports = server;

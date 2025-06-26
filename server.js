@@ -224,9 +224,14 @@ app.use('/api/*', (req, res) => {
   });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Static files served from: ${path.join(__dirname, 'build')}`);
-});
+// Start the server if not being imported by another module
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Static files served from: ${path.join(__dirname, 'build')}`);
+  });
+}
+
+// Export the app for iisnode and other modules
+module.exports = app;
