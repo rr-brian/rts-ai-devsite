@@ -34,12 +34,8 @@ IF NOT DEFINED KUDU_SYNC_CMD (
 )
 
 :: 1. Check if build directory exists
-IF NOT EXIST "%DEPLOYMENT_SOURCE%\build" (
-  echo Error: Build directory not found. Please run 'npm run build' locally before deploying.
-  goto error
-)
-
-echo Using pre-built React app from build directory...
+:: Skipping build directory check for server-only deployment
+echo Skipping build directory check for server-only deployment...
 
 :: 2. Create the deployment target directory structure first
 echo Creating deployment target directory structure...
@@ -113,10 +109,8 @@ IF !ERRORLEVEL! NEQ 0 goto error
 
 echo Test files have been removed after successful debugging
 
-:: 5. KuduSync - Copy build files to deployment target
-echo Syncing build files to deployment target...
-call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%\build" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd;node_modules"
-IF !ERRORLEVEL! NEQ 0 goto error
+:: 5. KuduSync - Skip copying build files since we're doing a server-only deployment
+echo Skipping build files sync for server-only deployment...
 
 :: 6. Copy node_modules
 echo Copying node_modules...
