@@ -120,33 +120,28 @@ IF EXIST "%DEPLOYMENT_SOURCE%\node_modules" (
   )
 )
 
-:: 5. Create a package.json file in the deployment target
-echo Creating package.json in the deployment target...
-call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
+:: 5. Copy package.json from source to deployment target
+echo Copying package.json from source to deployment target...
+call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\package.json" "%DEPLOYMENT_TARGET%\package.json" /Y
+IF !ERRORLEVEL! NEQ 0 goto error
 
-echo { > package.json
-echo   "name": "rts-ai", >> package.json
-echo   "version": "1.0.0", >> package.json
-echo   "description": "RTS AI Chatbot", >> package.json
-echo   "main": "server.js", >> package.json
-echo   "dependencies": { >> package.json
-echo     "express": "^4.18.2", >> package.json
-echo     "path": "^0.12.7", >> package.json
-echo     "cors": "^2.8.5", >> package.json
-echo     "dotenv": "^16.3.1", >> package.json
-echo     "mssql": "^9.1.1", >> package.json
-echo     "uuid": "^9.0.0", >> package.json
-echo     "node-fetch": "^2.6.7" >> package.json
-echo   }, >> package.json
-echo   "engines": { >> package.json
-echo     "node": "^20.0.0" >> package.json
-echo   } >> package.json
-echo } >> package.json
+echo Changing to deployment target directory...
+call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
 
 :: 6. Install all server dependencies
 echo Installing all server dependencies...
+echo Current directory: %CD%
+echo Node version:
+call :ExecuteCmd node -v
+echo NPM version:
+call :ExecuteCmd npm -v
+
+echo Installing dependencies with npm...
 call :ExecuteCmd npm install --production
 IF !ERRORLEVEL! NEQ 0 goto error
+
+echo Listing installed packages:
+call :ExecuteCmd npm list --depth=0
 
 :: Finished successfully
 echo Deployment completed successfully.
