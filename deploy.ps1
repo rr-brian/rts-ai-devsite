@@ -49,14 +49,17 @@ Copy-Item "$sourceDir\web.config" -Destination "$targetDir\web.config" -Force
 
 # Copy package.json files
 Write-Output "Copying package.json files..."
-if (Test-Path "$sourceDir\server-package.json") {
-    Copy-Item "$sourceDir\server-package.json" -Destination "$targetDir\package.json" -Force
-    Write-Output "Copied server-package.json as package.json"
+
+# For React build, we need the original package.json
+if (Test-Path "$sourceDir\package.json") {
+    Copy-Item "$sourceDir\package.json" -Destination "$targetDir\package.json" -Force
+    Write-Output "Copied original package.json for React build"
 }
 
-if (Test-Path "$sourceDir\package.json") {
-    Copy-Item "$sourceDir\package.json" -Destination "$targetDir\package.json.original" -Force
-    Write-Output "Copied original package.json as backup"
+# Keep a backup of the server-package.json
+if (Test-Path "$sourceDir\server-package.json") {
+    Copy-Item "$sourceDir\server-package.json" -Destination "$targetDir\server-package.json" -Force
+    Write-Output "Copied server-package.json as backup"
 }
 
 # Copy .env file if it exists
@@ -84,7 +87,35 @@ $packageJson | ConvertTo-Json | Set-Content -Path "$targetDir\package.json" -For
 # Change to target directory and install dependencies
 Write-Output "Installing dependencies..."
 Set-Location -Path $targetDir
+
+# Install production dependencies first
+Write-Output "Installing production dependencies..."
 npm install --production
+
+# Install React build dependencies
+Write-Output "Installing React build dependencies..."
+npm install --no-save react-scripts
+
+# Build the React app
+Write-Output "Building React app..."
+npm run build
+
+# Verify build directory was created
+if (Test-Path "$targetDir\build") {
+    Write-Output "React app built successfully!"
+    Get-ChildItem "$targetDir\build" | ForEach-Object { Write-Output "  - $($_.Name)" }
+} else {
+    Write-Output "WARNING: React build failed. Build directory not found."
+}
+
+# Restore server-package.json as the main package.json for server operation
+Write-Output "Restoring server-package.json for server operation..."
+if (Test-Path "$targetDir\server-package.json") {
+    Copy-Item "$targetDir\server-package.json" -Destination "$targetDir\package.json" -Force
+    Write-Output "Restored server-package.json as package.json"
+} else {
+    Write-Output "WARNING: server-package.json not found, server may not have all required dependencies."
+}
 
 # Verify express is installed
 Write-Output "Verifying express installation..."
