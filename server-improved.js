@@ -55,7 +55,7 @@ if (config && typeof config.loadConfig === 'function') {
   try {
     const dotenv = require('dotenv');
     const envPath = path.join(__dirname, '.env');
-    const altEnvPath = path.join(__dirname, '..', 'rts-ai-dev', '.env');
+    const altEnvPath = path.join(__dirname, '..', 'rts-ai-development', '.env');
     
     console.log(`Looking for .env file at: ${envPath}`);
     if (fs.existsSync(envPath)) {

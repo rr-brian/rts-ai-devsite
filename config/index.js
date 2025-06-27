@@ -13,8 +13,8 @@ const loadConfig = () => {
       
       // Check if .env file exists in the current directory
       const envPath = path.resolve(__dirname, '../.env');
-      // Also check in the rts-ai-dev directory
-      const altEnvPath = path.resolve(__dirname, '../../rts-ai-dev/.env');
+      // Also check in the rts-ai-development directory
+      const altEnvPath = path.resolve(__dirname, '../../rts-ai-development/.env');
       
       console.log('Looking for .env file at:', envPath);
       console.log('Looking for alternative .env file at:', altEnvPath);
