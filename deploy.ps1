@@ -27,6 +27,7 @@ Copy-Item "$sourceDir\express-server.js" -Destination "$targetDir\express-server
 Copy-Item "$sourceDir\express-server-full.js" -Destination "$targetDir\express-server-full.js" -Force -ErrorAction SilentlyContinue
 Copy-Item "$sourceDir\server-fixed.js" -Destination "$targetDir\server-fixed.js" -Force -ErrorAction SilentlyContinue
 Copy-Item "$sourceDir\app.js" -Destination "$targetDir\app.js" -Force -ErrorAction SilentlyContinue
+Copy-Item "$sourceDir\server-improved.js" -Destination "$targetDir\server-improved.js" -Force -ErrorAction SilentlyContinue
 Write-Output "Copied server JS files"
 
 # Copy modular directories
