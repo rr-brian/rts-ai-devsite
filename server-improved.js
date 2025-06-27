@@ -292,28 +292,350 @@ app.get('/api/create-build', (req, res) => {
       console.log('Build directory already exists');
     }
     
-    // Create a simple index.html file
+    // Create static directory for CSS and JS
+    const staticPath = path.join(buildPath, 'static');
+    if (!fs.existsSync(staticPath)) {
+      fs.mkdirSync(staticPath, { recursive: true });
+      console.log('Static directory created successfully');
+    }
+    
+    // Create CSS directory
+    const cssPath = path.join(staticPath, 'css');
+    if (!fs.existsSync(cssPath)) {
+      fs.mkdirSync(cssPath, { recursive: true });
+      console.log('CSS directory created successfully');
+    }
+    
+    // Create JS directory
+    const jsPath = path.join(staticPath, 'js');
+    if (!fs.existsSync(jsPath)) {
+      fs.mkdirSync(jsPath, { recursive: true });
+      console.log('JS directory created successfully');
+    }
+    
+    // Create a CSS file
+    const cssFilePath = path.join(cssPath, 'main.css');
+    const cssContent = `
+      :root {
+        --primary: #0066cc;
+        --secondary: #004080;
+        --light: #f8f9fa;
+        --dark: #343a40;
+        --success: #28a745;
+        --info: #17a2b8;
+        --warning: #ffc107;
+        --danger: #dc3545;
+      }
+      
+      * { box-sizing: border-box; }
+      
+      body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+        color: var(--dark);
+        background-color: var(--light);
+      }
+      
+      .app {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      
+      header {
+        background-color: var(--primary);
+        color: white;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      
+      .logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+      
+      .nav-links {
+        display: flex;
+        gap: 1.5rem;
+      }
+      
+      .nav-links a {
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      
+      main {
+        flex: 1;
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      
+      .container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      
+      h1 {
+        color: var(--primary);
+        margin-top: 0;
+      }
+      
+      .card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+      
+      .card-header {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        font-weight: bold;
+        color: var(--primary);
+      }
+      
+      .status {
+        display: flex;
+        align-items: center;
+        margin: 1rem 0;
+      }
+      
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+      
+      .status-success { background-color: var(--success); }
+      .status-warning { background-color: var(--warning); }
+      .status-error { background-color: var(--danger); }
+      
+      .button {
+        display: inline-block;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+      
+      .button:hover {
+        background-color: var(--secondary);
+      }
+      
+      footer {
+        background-color: var(--dark);
+        color: white;
+        text-align: center;
+        padding: 1rem;
+        margin-top: 2rem;
+      }
+      
+      .api-section {
+        margin-top: 2rem;
+      }
+      
+      .endpoint {
+        background-color: #f5f5f5;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-family: monospace;
+        margin-bottom: 0.5rem;
+      }
+      
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      
+      code {
+        display: block;
+        background-color: #f5f5f5;
+        padding: 0.5rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: monospace;
+      }
+      
+      @media (max-width: 768px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .nav-links {
+          gap: 1rem;
+        }
+        
+        main {
+          padding: 1rem;
+        }
+      }
+    `;
+    
+    fs.writeFileSync(cssFilePath, cssContent);
+    console.log('CSS file created successfully');
+    
+    // Create a JS file
+    const jsFilePath = path.join(jsPath, 'main.js');
+    const jsContent = `
+      // Main JavaScript file for the placeholder app
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Placeholder app loaded');
+        
+        // Update server time every second
+        setInterval(function() {
+          const timeElements = document.querySelectorAll('.server-time');
+          timeElements.forEach(el => {
+            el.textContent = new Date().toISOString();
+          });
+        }, 1000);
+        
+        // Add event listeners to API buttons
+        document.querySelectorAll('.api-button').forEach(button => {
+          button.addEventListener('click', function(e) {
+            const endpoint = this.dataset.endpoint;
+            if (endpoint) {
+              fetch(endpoint)
+                .then(response => response.json())
+                .then(data => {
+                  console.log('API response:', data);
+                  const resultElement = document.getElementById('api-result');
+                  if (resultElement) {
+                    resultElement.textContent = JSON.stringify(data, null, 2);
+                    resultElement.style.display = 'block';
+                  }
+                })
+                .catch(error => {
+                  console.error('API error:', error);
+                  const resultElement = document.getElementById('api-result');
+                  if (resultElement) {
+                    resultElement.textContent = 'Error: ' + error.message;
+                    resultElement.style.display = 'block';
+                  }
+                });
+            }
+          });
+        });
+      });
+    `;
+    
+    fs.writeFileSync(jsFilePath, jsContent);
+    console.log('JS file created successfully');
+    
+    // Create a more comprehensive placeholder app
     const indexPath = path.join(buildPath, 'index.html');
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
           <title>RTS AI Application</title>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-            h1 { color: #0066cc; }
-            .container { max-width: 800px; margin: 0 auto; }
-          </style>
+          <link rel="icon" href="data:,">
+          <link rel="stylesheet" href="/static/css/main.css">
         </head>
         <body>
-          <div class="container">
-            <h1>RTS AI Application</h1>
-            <p>This is a simple placeholder page created by the server.</p>
-            <p>The React application will be displayed here when properly built and deployed.</p>
-            <p>Server time: ${new Date().toISOString()}</p>
+          <div class="app">
+            <header>
+              <nav>
+                <div class="logo">RTS AI Application</div>
+                <div class="nav-links">
+                  <a href="/">Home</a>
+                  <a href="/api/health">Health</a>
+                  <a href="/api/env">Environment</a>
+                  <a href="/api/files">Files</a>
+                </div>
+              </nav>
+            </header>
+            
+            <main>
+              <div class="container">
+                <h1>RTS AI Application</h1>
+                
+                <div class="card">
+                  <div class="card-header">Server Status</div>
+                  <div class="status">
+                    <div class="status-indicator status-success"></div>
+                    <span>Server is running</span>
+                  </div>
+                  <p>This is a placeholder page created by the server. The React application will be displayed here when properly built and deployed.</p>
+                  <p>Server time: <span class="server-time">${new Date().toISOString()}</span></p>
+                </div>
+                
+                <div class="api-section">
+                  <h2>Available API Endpoints</h2>
+                  <div class="endpoint">
+                    <button class="button api-button" data-endpoint="/api/health">Health Check</button> - /api/health
+                  </div>
+                  <div class="endpoint">
+                    <button class="button api-button" data-endpoint="/api/env">Environment Variables</button> - /api/env
+                  </div>
+                  <div class="endpoint">
+                    <button class="button api-button" data-endpoint="/api/files">File Explorer</button> - /api/files
+                  </div>
+                  <div class="endpoint">
+                    <button class="button api-button" data-endpoint="/api/create-build">Create Build</button> - /api/create-build
+                  </div>
+                  <div class="endpoint">
+                    <button class="button api-button" data-endpoint="/test">Test Endpoint</button> - /test
+                  </div>
+                  
+                  <div class="card" style="margin-top: 1rem;">
+                    <div class="card-header">API Result</div>
+                    <pre id="api-result" style="display: none; max-height: 300px; overflow: auto;"></pre>
+                  </div>
+                </div>
+                
+                <div class="grid">
+                  <div class="card">
+                    <div class="card-header">Build Directory</div>
+                    <p>The build directory has been created at:</p>
+                    <code>${buildPath}</code>
+                    <p>This placeholder page is being served from:</p>
+                    <code>${indexPath}</code>
+                  </div>
+                  
+                  <div class="card">
+                    <div class="card-header">Server Information</div>
+                    <p>Platform: ${process.platform}</p>
+                    <p>Node.js: ${process.version}</p>
+                    <p>Directory: ${__dirname}</p>
+                  </div>
+                </div>
+              </div>
+            </main>
+            
+            <footer>
+              &copy; ${new Date().getFullYear()} RTS AI Application
+            </footer>
           </div>
+          
+          <script src="/static/js/main.js"></script>
         </body>
       </html>
     `;
