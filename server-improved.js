@@ -148,10 +148,73 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memoryUsage: process.memoryUsage(),
-    nodeVersion: process.version
+    env: process.env.NODE_ENV || 'not set',
+    buildDir: fs.existsSync(path.join(__dirname, 'build')) ? 'exists' : 'missing'
   });
+});
+
+// Endpoint to create a placeholder build directory
+app.get('/api/create-build', (req, res) => {
+  try {
+    const buildDir = path.join(__dirname, 'build');
+    
+    // Create build directory if it doesn't exist
+    if (!fs.existsSync(buildDir)) {
+      fs.mkdirSync(buildDir, { recursive: true });
+      console.log('Created build directory:', buildDir);
+    }
+    
+    // Create a simple index.html file
+    const indexHtml = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>RTS AI - Placeholder</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+          .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+          h1 { color: #333; }
+          .status { background: #f4f4f4; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+          .info { color: #666; }
+          .env-var { font-family: monospace; background: #eee; padding: 2px 4px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>RTS AI Platform</h1>
+          <div class="status">
+            <h2>Placeholder Build</h2>
+            <p>This is a placeholder page created by the server because the React build was not found.</p>
+            <p>Server is running and API endpoints are available.</p>
+          </div>
+          <div class="info">
+            <h3>Environment Information:</h3>
+            <p>Node.js: ${process.version}</p>
+            <p>Environment: ${process.env.NODE_ENV || 'not set'}</p>
+            <p>Server Time: ${new Date().toISOString()}</p>
+          </div>
+          <div class="info">
+            <h3>Available Endpoints:</h3>
+            <ul>
+              <li><code>/api/health</code> - Check server health</li>
+              <li><code>/api/azure-openai/chat</code> - Chat with Azure OpenAI</li>
+            </ul>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    fs.writeFileSync(path.join(buildDir, 'index.html'), indexHtml);
+    console.log('Created placeholder index.html');
+    
+    res.json({ success: true, message: 'Placeholder build directory created successfully' });
+  } catch (error) {
+    console.error('Error creating placeholder build:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.get('/api/env', (req, res) => {
