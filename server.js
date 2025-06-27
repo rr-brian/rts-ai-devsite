@@ -12,7 +12,29 @@ const apiRoutes = require('./routes/api');
 const conversationRoutes = require('./routes/conversations');
 
 // Load environment variables
+console.log('Loading environment variables...');
 loadConfig();
+
+// Log important environment variables (redacting sensitive values)
+console.log('Environment variables loaded:');
+console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('PORT:', process.env.PORT || 'not set (using default 3000)');
+console.log('WEBSITE_SITE_NAME:', process.env.WEBSITE_SITE_NAME || 'not set');
+console.log('REACT_APP_CONVERSATION_FUNCTION_URL:', process.env.REACT_APP_CONVERSATION_FUNCTION_URL ? 'set' : 'not set');
+console.log('REACT_APP_FUNCTION_KEY:', process.env.REACT_APP_FUNCTION_KEY ? 'set (redacted)' : 'not set');
+console.log('Current directory:', __dirname);
+
+// Check for critical files
+const criticalFiles = [
+  path.join(__dirname, 'package.json'),
+  path.join(__dirname, '.env'),
+  path.join(__dirname, 'build', 'index.html')
+];
+
+console.log('Checking for critical files:');
+criticalFiles.forEach(file => {
+  console.log(`${file}: ${fs.existsSync(file) ? 'exists' : 'missing'}`);
+});
 
 // Initialize Express app
 const app = express();
@@ -72,11 +94,22 @@ app.use('/api/*', (req, res) => {
 
 // Start the server if not being imported by another module
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Static files served from: ${path.join(__dirname, 'build')}`);
-  });
+  try {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Static files served from: ${path.join(__dirname, 'build')}`);
+      console.log('Server started successfully');
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    // Log more details about the error
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+  }
 }
 
 // Export the app for iisnode and other modules

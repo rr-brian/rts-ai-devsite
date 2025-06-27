@@ -143,6 +143,27 @@ echo Copying server-package.json from source to deployment target as package.jso
 call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\server-package.json" "%DEPLOYMENT_TARGET%\package.json" /Y
 IF !ERRORLEVEL! NEQ 0 goto error
 
+:: 5.1 Copy package.json from source to deployment target if it exists
+echo Checking for package.json in source...
+IF EXIST "%DEPLOYMENT_SOURCE%\package.json" (
+  echo Found package.json, copying to deployment target...
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\package.json" "%DEPLOYMENT_TARGET%\package.json.full" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
+:: 5.2 Copy .env file if it exists
+echo Checking for .env file in source...
+IF EXIST "%DEPLOYMENT_SOURCE%\.env" (
+  echo Found .env file, copying to deployment target...
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\.env" "%DEPLOYMENT_TARGET%\.env" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+IF EXIST "%DEPLOYMENT_SOURCE%\..\rts-ai-dev\.env" (
+  echo Found .env file in parent directory, copying to deployment target...
+  call :ExecuteCmd copy "%DEPLOYMENT_SOURCE%\..\rts-ai-dev\.env" "%DEPLOYMENT_TARGET%\.env" /Y
+  IF !ERRORLEVEL! NEQ 0 goto error
+)
+
 echo Changing to deployment target directory...
 call :ExecuteCmd cd "%DEPLOYMENT_TARGET%"
 
@@ -156,15 +177,20 @@ call :ExecuteCmd npm -v
 
 echo Installing dependencies with npm...
 
-:: First, try to install express explicitly
-echo Installing express package explicitly...
-call :ExecuteCmd npm install express --save
-IF !ERRORLEVEL! NEQ 0 echo Warning: Express installation may have failed, continuing anyway...
+:: First, try to install express and other critical dependencies explicitly
+echo Installing critical packages explicitly...
+call :ExecuteCmd npm install express cors dotenv node-fetch uuid path --save
+IF !ERRORLEVEL! NEQ 0 echo Warning: Critical package installation may have failed, continuing anyway...
 
 :: Then install all other dependencies
 echo Installing all production dependencies...
 call :ExecuteCmd npm install --production
 IF !ERRORLEVEL! NEQ 0 goto error
+
+:: Force install again to be sure
+echo Force installing critical dependencies again...
+call :ExecuteCmd npm install express cors dotenv node-fetch uuid path --save --force
+IF !ERRORLEVEL! NEQ 0 echo Warning: Force installation may have failed, continuing anyway...
 
 :: Verify express is installed
 echo Checking for express package...

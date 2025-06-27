@@ -37,6 +37,9 @@ azure-function-test.html
 server-test.js
 test-*.js
 
+# Git related
+repo-mirror/
+
 # Deployment profiles
 publish-profile.xml
 *.pubxml
