@@ -163,18 +163,61 @@ app.get('/api/files', (req, res) => {
   const dirPath = req.query.path || __dirname;
   
   try {
+    // Get directory information
+    const stats = fs.statSync(dirPath);
+    const dirInfo = {
+      path: dirPath,
+      isDirectory: stats.isDirectory(),
+      size: stats.size,
+      modified: stats.mtime,
+      permissions: {
+        readable: true,
+        writable: true
+      }
+    };
+    
+    // Try to check if we can read/write to this directory
+    try { fs.accessSync(dirPath, fs.constants.R_OK); } catch(e) { dirInfo.permissions.readable = false; }
+    try { fs.accessSync(dirPath, fs.constants.W_OK); } catch(e) { dirInfo.permissions.writable = false; }
+    
+    // Get parent directory
+    const parentDir = path.dirname(dirPath);
+    
+    // Read directory contents
     const files = fs.readdirSync(dirPath);
     const fileDetails = files.map(file => {
       const filePath = path.join(dirPath, file);
       try {
         const stats = fs.statSync(filePath);
-        return {
+        const isDir = stats.isDirectory();
+        const fileInfo = {
           name: file,
           path: filePath,
-          isDirectory: stats.isDirectory(),
+          isDirectory: isDir,
           size: stats.size,
-          modified: stats.mtime
+          modified: stats.mtime,
+          permissions: {
+            readable: true,
+            writable: true
+          }
         };
+        
+        // Try to check if we can read/write to this file
+        try { fs.accessSync(filePath, fs.constants.R_OK); } catch(e) { fileInfo.permissions.readable = false; }
+        try { fs.accessSync(filePath, fs.constants.W_OK); } catch(e) { fileInfo.permissions.writable = false; }
+        
+        // If it's a directory, try to peek inside
+        if (isDir) {
+          try {
+            const subItems = fs.readdirSync(filePath);
+            fileInfo.containsItems = subItems.length;
+            fileInfo.firstFewItems = subItems.slice(0, 5);
+          } catch (e) {
+            fileInfo.error = `Cannot read directory contents: ${e.message}`;
+          }
+        }
+        
+        return fileInfo;
       } catch (err) {
         return {
           name: file,
@@ -184,14 +227,47 @@ app.get('/api/files', (req, res) => {
       }
     });
     
+    // Add special paths for debugging
+    const specialPaths = [
+      { name: 'Current Directory', path: __dirname },
+      { name: 'Parent Directory', path: parentDir },
+      { name: 'Root Directory', path: '/' },
+      { name: 'Home Directory', path: process.env.HOME || process.env.USERPROFILE },
+      { name: 'Temp Directory', path: process.env.TEMP || process.env.TMP || '/tmp' },
+      { name: 'Build Directory', path: path.join(__dirname, 'build') },
+      { name: 'wwwroot', path: path.join('/', 'home', 'site', 'wwwroot') },
+      { name: 'D:\\home', path: 'D:\\home' }
+    ];
+    
     res.json({
       currentDirectory: dirPath,
-      files: fileDetails
+      directoryInfo: dirInfo,
+      parentDirectory: parentDir,
+      files: fileDetails,
+      specialPaths: specialPaths,
+      serverInfo: {
+        platform: process.platform,
+        architecture: process.arch,
+        nodeVersion: process.version,
+        env: process.env.NODE_ENV,
+        cwd: process.cwd(),
+        dirname: __dirname,
+        filename: __filename
+      }
     });
   } catch (err) {
     res.status(500).json({
       error: err.message,
-      path: dirPath
+      path: dirPath,
+      serverInfo: {
+        platform: process.platform,
+        architecture: process.arch,
+        nodeVersion: process.version,
+        env: process.env.NODE_ENV,
+        cwd: process.cwd(),
+        dirname: __dirname,
+        filename: __filename
+      }
     });
   }
 });
@@ -200,6 +276,80 @@ app.get('/api/files', (req, res) => {
 app.get('/test', (req, res) => {
   console.log('Simple test endpoint called');
   res.send('Test endpoint is working');
+});
+
+// Endpoint to create build directory and a simple index.html file
+app.get('/api/create-build', (req, res) => {
+  try {
+    const buildPath = path.join(__dirname, 'build');
+    console.log(`Attempting to create build directory at: ${buildPath}`);
+    
+    // Create build directory if it doesn't exist
+    if (!fs.existsSync(buildPath)) {
+      fs.mkdirSync(buildPath, { recursive: true });
+      console.log('Build directory created successfully');
+    } else {
+      console.log('Build directory already exists');
+    }
+    
+    // Create a simple index.html file
+    const indexPath = path.join(buildPath, 'index.html');
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>RTS AI Application</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            h1 { color: #0066cc; }
+            .container { max-width: 800px; margin: 0 auto; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>RTS AI Application</h1>
+            <p>This is a simple placeholder page created by the server.</p>
+            <p>The React application will be displayed here when properly built and deployed.</p>
+            <p>Server time: ${new Date().toISOString()}</p>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    fs.writeFileSync(indexPath, htmlContent);
+    console.log('Simple index.html file created successfully');
+    
+    // Return success response
+    res.json({
+      success: true,
+      buildPath: buildPath,
+      indexPath: indexPath,
+      message: 'Build directory and index.html created successfully',
+      serverInfo: {
+        platform: process.platform,
+        architecture: process.arch,
+        nodeVersion: process.version,
+        cwd: process.cwd(),
+        dirname: __dirname
+      }
+    });
+  } catch (error) {
+    console.error('Error creating build directory:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack,
+      serverInfo: {
+        platform: process.platform,
+        architecture: process.arch,
+        nodeVersion: process.version,
+        cwd: process.cwd(),
+        dirname: __dirname
+      }
+    });
+  }
 });
 
 // Serve static files from the React app build directory if it exists
