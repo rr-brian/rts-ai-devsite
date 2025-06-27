@@ -23,7 +23,8 @@ Copy-Item "$sourceDir\server.js" -Destination "$targetDir\server.js" -Force
 Copy-Item "$sourceDir\startup.js" -Destination "$targetDir\startup.js" -Force
 Copy-Item "$sourceDir\server-minimal.js" -Destination "$targetDir\server-minimal.js" -Force -ErrorAction SilentlyContinue
 Copy-Item "$sourceDir\minimal-server.js" -Destination "$targetDir\minimal-server.js" -Force -ErrorAction SilentlyContinue
-Write-Output "Copied minimal-server.js file"
+Copy-Item "$sourceDir\express-server.js" -Destination "$targetDir\express-server.js" -Force -ErrorAction SilentlyContinue
+Write-Output "Copied server JS files"
 
 # Copy modular directories
 $directories = @("config", "middleware", "routes", "services")
