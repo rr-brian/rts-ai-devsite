@@ -5,6 +5,9 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const fetch = require('node-fetch');
 
 // Create Express app
 const app = express();
@@ -41,6 +44,7 @@ const middlewareSetup = safeRequire('./middleware/setup', {
 });
 const apiRoutes = safeRequire('./routes/api', express.Router());
 const conversationRoutes = safeRequire('./routes/conversations', express.Router());
+const azureOpenAIRoutes = safeRequire('./routes/azure-openai', express.Router());
 
 // Load environment variables
 console.log('Loading environment variables from config module...');
@@ -129,6 +133,14 @@ if (conversationRoutes) {
   console.log('Conversation routes loaded successfully');
 } else {
   console.warn('Conversation routes not available');
+}
+
+// Mount Azure OpenAI routes if available
+if (azureOpenAIRoutes) {
+  app.use('/api/azure-openai', azureOpenAIRoutes);
+  console.log('Azure OpenAI routes loaded successfully');
+} else {
+  console.warn('Azure OpenAI routes not available');
 }
 
 // Add debugging endpoints

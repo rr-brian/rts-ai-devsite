@@ -10,6 +10,8 @@ if (-not $targetDir) {
 
 Write-Output "Source directory: $sourceDir"
 Write-Output "Target directory: $targetDir"
+Write-Output "Node.js version: $(node -v)"
+Write-Output "NPM version: $(npm -v)"
 
 # Create target directory if it doesn't exist
 if (-not (Test-Path $targetDir)) {
@@ -81,6 +83,9 @@ $packageJson = @{
         "node-fetch" = "^2.6.9"
         uuid = "^9.0.0"
     }
+    engines = @{
+        node = "16.x"
+    }
 }
 $packageJson | ConvertTo-Json | Set-Content -Path "$targetDir\package.json" -Force
 
@@ -92,13 +97,41 @@ Set-Location -Path $targetDir
 Write-Output "Installing production dependencies..."
 npm install --production
 
-# Install React build dependencies
-Write-Output "Installing React build dependencies..."
-npm install --no-save react-scripts
+# Check if we should attempt to build the React app
+$shouldBuildReact = $true
 
-# Build the React app
-Write-Output "Building React app..."
-npm run build
+# Check if we have the src directory which is needed for React build
+if (-not (Test-Path "$targetDir\src")) {
+    Write-Output "WARNING: src directory not found, cannot build React app"
+    $shouldBuildReact = $false
+}
+
+if ($shouldBuildReact) {
+    try {
+        # Install React build dependencies
+        Write-Output "Installing React build dependencies..."
+        npm install --no-save react-scripts
+        npm install --no-save react react-dom react-router-dom @azure/msal-react @azure/msal-browser react-markdown
+        
+        # Create .env file with necessary environment variables for React build
+        Write-Output "Creating .env file for React build..."
+        @"
+NODE_OPTIONS=--openssl-legacy-provider
+SKIP_PREFLIGHT_CHECK=true
+REACT_APP_AZURE_OPENAI_ENDPOINT=$env:REACT_APP_AZURE_OPENAI_ENDPOINT
+REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME=$env:REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME
+REACT_APP_CONVERSATION_FUNCTION_URL=$env:REACT_APP_CONVERSATION_FUNCTION_URL
+"@ | Set-Content -Path "$targetDir\.env" -Force
+        
+        # Build the React app
+        Write-Output "Building React app..."
+        npm run build
+    } catch {
+        Write-Output "ERROR: React build failed with error: $_"
+        Write-Output "Will attempt to create a placeholder build directory instead"
+        $shouldBuildReact = $false
+    }
+}
 
 # Verify build directory was created
 if (Test-Path "$targetDir\build") {
@@ -106,6 +139,24 @@ if (Test-Path "$targetDir\build") {
     Get-ChildItem "$targetDir\build" | ForEach-Object { Write-Output "  - $($_.Name)" }
 } else {
     Write-Output "WARNING: React build failed. Build directory not found."
+    Write-Output "Creating placeholder build directory using server API..."
+    
+    # Start the server temporarily to use the /api/create-build endpoint
+    $serverProcess = Start-Process -FilePath "node" -ArgumentList "$targetDir\server-improved.js" -PassThru -NoNewWindow
+    Start-Sleep -Seconds 5
+    
+    try {
+        # Call the /api/create-build endpoint to create a placeholder build
+        $response = Invoke-WebRequest -Uri "http://localhost:3000/api/create-build" -UseBasicParsing
+        Write-Output "Placeholder build created: $($response.Content)"
+    } catch {
+        Write-Output "ERROR: Failed to create placeholder build: $_"
+    } finally {
+        # Stop the temporary server
+        if ($serverProcess) {
+            Stop-Process -Id $serverProcess.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 # Restore server-package.json as the main package.json for server operation
