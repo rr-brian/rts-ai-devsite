@@ -111,7 +111,7 @@ if ($shouldBuildReact) {
         # Install React build dependencies
         Write-Output "Installing React build dependencies..."
         npm install --no-save react-scripts
-        npm install --no-save react react-dom react-router-dom @azure/msal-react @azure/msal-browser react-markdown
+        npm install --no-save react react-dom react-router-dom @azure/msal-react @azure/msal-browser react-markdown uuid
         
         # Create .env file with necessary environment variables for React build
         Write-Output "Creating .env file for React build..."
@@ -119,8 +119,14 @@ if ($shouldBuildReact) {
 NODE_OPTIONS=--openssl-legacy-provider
 SKIP_PREFLIGHT_CHECK=true
 REACT_APP_AZURE_OPENAI_ENDPOINT=$env:REACT_APP_AZURE_OPENAI_ENDPOINT
+REACT_APP_AZURE_OPENAI_API_KEY=$env:REACT_APP_AZURE_OPENAI_API_KEY
 REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME=$env:REACT_APP_AZURE_OPENAI_DEPLOYMENT_NAME
+REACT_APP_AZURE_OPENAI_API_VERSION=$env:REACT_APP_AZURE_OPENAI_API_VERSION
 REACT_APP_CONVERSATION_FUNCTION_URL=$env:REACT_APP_CONVERSATION_FUNCTION_URL
+REACT_APP_FUNCTION_KEY=$env:REACT_APP_FUNCTION_KEY
+REACT_APP_AZURE_AD_AUTHORITY=$env:REACT_APP_AZURE_AD_AUTHORITY
+REACT_APP_AZURE_AD_CLIENT_ID=$env:REACT_APP_AZURE_AD_CLIENT_ID
+REACT_APP_AZURE_AD_REDIRECT_URI=$env:REACT_APP_AZURE_AD_REDIRECT_URI
 "@ | Set-Content -Path "$targetDir\.env" -Force
         
         # Build the React app
