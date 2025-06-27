@@ -186,18 +186,8 @@ echo Installing dependencies with npm...
 :: Create a minimal package.json file with just the critical dependencies
 echo Creating minimal package.json for dependency installation...
 
-:: Write each line separately to avoid batch file parsing issues
-echo { > "%DEPLOYMENT_TARGET%\package.json"
-echo   "name": "rts-ai-backend", >> "%DEPLOYMENT_TARGET%\package.json"
-echo   "version": "1.0.0", >> "%DEPLOYMENT_TARGET%\package.json"
-echo   "dependencies": { >> "%DEPLOYMENT_TARGET%\package.json"
-echo     "express": "^4.18.2", >> "%DEPLOYMENT_TARGET%\package.json"
-echo     "cors": "^2.8.5", >> "%DEPLOYMENT_TARGET%\package.json"
-echo     "dotenv": "^16.0.3", >> "%DEPLOYMENT_TARGET%\package.json"
-echo     "node-fetch": "^2.6.9", >> "%DEPLOYMENT_TARGET%\package.json"
-echo     "uuid": "^9.0.0" >> "%DEPLOYMENT_TARGET%\package.json"
-echo   } >> "%DEPLOYMENT_TARGET%\package.json"
-echo } >> "%DEPLOYMENT_TARGET%\package.json"
+:: Use a single echo command with escaped quotes to avoid batch file parsing issues
+echo {^"name^"^:^"rts-ai-backend^"^,^"version^"^:^"1.0.0^"^,^"dependencies^"^:{^"express^"^:^"^4.18.2^"^,^"cors^"^:^"^2.8.5^"^,^"dotenv^"^:^"^16.0.3^"^,^"node-fetch^"^:^"^2.6.9^"^,^"uuid^"^:^"^9.0.0^"}} > "%DEPLOYMENT_TARGET%\package.json"
 
 :: Install dependencies directly from the package.json
 echo Installing dependencies from package.json...
@@ -205,72 +195,37 @@ cd "%DEPLOYMENT_TARGET%"
 call :ExecuteCmd npm install --production
 IF !ERRORLEVEL! NEQ 0 echo Warning: npm install failed, continuing anyway...
 
-:: Verify node_modules directory exists
-echo Checking if node_modules directory exists...
-IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules" (
-  echo Creating node_modules directory...
-  mkdir "%DEPLOYMENT_TARGET%\node_modules"
-)
+:: Simple directory check
+echo Checking node_modules directory...
+IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules" mkdir "%DEPLOYMENT_TARGET%\node_modules"
 
-:: Verify express module exists - using simpler syntax to avoid batch parsing issues
-echo Checking if express module exists...
-IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" (
-  echo Express module not found, installing individually...
-  call :ExecuteCmd npm install express --save
-)
+:: Simple express check
+echo Checking express module...
+IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" call :ExecuteCmd npm install express --save
 
-:: Verify express is installed
+:: Final express check and fallback
 echo Checking for express package...
-IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" (
-  echo ERROR: Express package not found in node_modules. Attempting emergency installation...
-  
-  :: Try direct installation one more time
-  echo Installing express directly...
-  call :ExecuteCmd npm install express --save
-)
+IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" call :ExecuteCmd npm install express --save
 
-:: Final check and fallback for express
+:: Create fallback express module if still missing
 IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" (
-  echo CRITICAL ERROR: Express package still not found after emergency installation.
-  echo Creating express.js module manually as a last resort...
+  echo Creating fallback express module...
+  mkdir "%DEPLOYMENT_TARGET%\node_modules\express"
   
-  IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules" mkdir "%DEPLOYMENT_TARGET%\node_modules"
-  IF NOT EXIST "%DEPLOYMENT_TARGET%\node_modules\express" mkdir "%DEPLOYMENT_TARGET%\node_modules\express"
-  
-  :: Create a minimal express module to prevent crashes
-  echo Creating minimal express.js module...
-  
+  :: Create minimal express.js file
   echo // Minimal express module > "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
   echo module.exports = function() { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
   echo   return function(req, res) { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     res.writeHead(200, {'Content-Type': 'text/html'}); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     res.end('Express module not properly installed. Please check deployment logs.'); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo module.exports.static = function() { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   return function(req, res, next) { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     if(typeof next === 'function') next(); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo module.exports.json = function() { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   return function(req, res, next) { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     if(typeof next === 'function') next(); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo module.exports.urlencoded = function() { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   return function(req, res, next) { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     if(typeof next === 'function') next(); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo module.exports.Router = function() { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo   return { >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     get: function() {}, >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     post: function() {}, >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
-  echo     use: function() {} >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
+  echo     res.writeHead(200, {"Content-Type": "text/html"}); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
+  echo     res.end("Express module not properly installed"); >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
   echo   }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
   echo }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
   
-  echo Created minimal express.js module to prevent crashes.
+  :: Add minimal required methods
+  echo module.exports.static = function() { return function(req, res, next) { if(next) next(); }; }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
+  echo module.exports.json = function() { return function(req, res, next) { if(next) next(); }; }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
+  echo module.exports.urlencoded = function() { return function(req, res, next) { if(next) next(); }; }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
+  echo module.exports.Router = function() { return { get: function() {}, post: function() {}, use: function() {} }; }; >> "%DEPLOYMENT_TARGET%\node_modules\express\index.js"
 )
 
 echo Listing installed packages:
