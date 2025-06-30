@@ -45,6 +45,7 @@ const middlewareSetup = safeRequire('./middleware/setup', {
 const apiRoutes = safeRequire('./routes/api', express.Router());
 const conversationRoutes = safeRequire('./routes/conversations', express.Router());
 const azureOpenAIRoutes = safeRequire('./routes/azure-openai', express.Router());
+const configRoutes = safeRequire('./routes/config', express.Router());
 
 // Load environment variables
 console.log('Loading environment variables from config module...');
@@ -141,6 +142,14 @@ if (azureOpenAIRoutes) {
   console.log('Azure OpenAI routes loaded successfully');
 } else {
   console.warn('Azure OpenAI routes not available');
+}
+
+// Mount config routes if available
+if (configRoutes) {
+  app.use('/api', configRoutes);
+  console.log('Config routes loaded successfully');
+} else {
+  console.warn('Config routes not available');
 }
 
 // Add debugging endpoints
