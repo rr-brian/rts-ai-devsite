@@ -98,12 +98,22 @@ $packageJson = @{
 }
 $packageJson | ConvertTo-Json | Set-Content -Path "$targetDir\package.json" -Force
 
+# Run clean-build script to remove sensitive information
+Write-Output "Running clean-build script..."
+if (Test-Path "$sourceDir\clean-build.ps1") {
+    & "$sourceDir\clean-build.ps1"
+    Write-Output "Clean-build script executed successfully"
+}
+
 # Check if we have the local-preview build directory
 if (Test-Path "$sourceDir\local-preview\build") {
     Write-Output "Found local-preview build directory, will use these files"
     
     # Copy all files from local-preview/build to build directory
     Write-Output "Copying local-preview build files to build directory..."
+    if (-not (Test-Path "$targetDir\build")) {
+        New-Item -ItemType Directory -Path "$targetDir\build" -Force
+    }
     Copy-Item "$sourceDir\local-preview\build\*" -Destination "$targetDir\build\" -Recurse -Force
     Write-Output "Copied local-preview build files to build directory"
 } else {
