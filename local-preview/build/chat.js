@@ -153,17 +153,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to save conversation to the server
     async function saveConversation(messageList) {
         try {
+            const conversationId = generateUUID();
+            const timestamp = new Date().toISOString();
+            const payload = {
+                conversation_id: conversationId,
+                messages: messageList,
+                timestamp: timestamp
+            };
+            
+            // Save to /api/conversations endpoint
             await fetch('/api/conversations', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    conversation_id: generateUUID(),
-                    messages: messageList,
-                    timestamp: new Date().toISOString()
-                })
+                body: JSON.stringify(payload)
             });
+            
+            // Also save to fn-conversationsave endpoint
+            await fetch('/api/fn-conversationsave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log('Conversation saved successfully to both endpoints');
         } catch (error) {
             console.error('Error saving conversation:', error);
         }
